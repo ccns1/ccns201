@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>单机版视频呼叫</title>
+    <style>
+      .video_container {
+        width: 800px;
+        margin: 100px auto 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="video_container">
+      <video id="local_video"></video>
+      <video id="remote_video"></video>
+    </div>
+    <hr />
+    <div class="button_container">
+      <button id="callButton">呼叫</button>
+      <button id="hangupButton">挂断</button>
+    </div>
+
+    <script>
+			window.onload = function() {
+        let localVideo = document.getElementById("local_video")
+        let remoteVideo = document.getElementById("remote_video")
+        let callButton = document.getElementById("callButton")
+        let hangupButton = document.getElementById("hangupButton")
+
+				localVideo.addEventListener("loadedmetadata", () => {
+          localVideo.play()
+        })
+
+				remoteVideo.addEventListener("loadedmetadata", () => {
+          remoteVideo.play()
+        })
+
+
+        let localStream = null
+
+        callButton.addEventListener("click", async e => {
+        	if (localStream) return console.log('连接中。。。');
+        	localStream = await getUserMedia()
+        	localVideo.srcObject = localStream
+
+					callAction()
+
+        })
+
+        hangupButton.addEventListener("click", e => {
+        	localStream = null
+        })
+
+        // 获取被动媒体
+        async function getUserMedia() {
+        	return await navigator.mediaDevices
+        		.getUserMedia({ video: true, audio: true })
+        		.catch(e => {
+        			console.log(e)
+        		})
+        }
+
+        function callAction() {
+
+        	pc1 = new RTCPeerConnection()
+        	pc2 = new RTCPeerConnection()
+
+        	// 监测候选者加入
+        	pc1.addEventListener('icecandidate', function (event) {
+        			let iceCandidate = event.candidate;
+        			if (iceCandidate) {
+        				pc2.addIceCandidate(iceCandidate);
+        			}
+        	});
+        	localStream.getTracks().forEach(track => pc1.addTrack(track, localStream));
+
+        	// 监测媒体流传入
+        	pc2.addEventListener('addstream', function (event) {
+        		remoteVideo.srcObject = event.stream;
+        	})
+
+        	pc1.createOffer({OfferToReceiveAudio: true, OfferToReceiveVideo: true}).then(function (offer) {
+        		pc1.setLocalDescription(offer);
+        		pc2.setRemoteDescription(offer);
+
+						pc2.createAnswer().then(function (description) {
+									pc2.setLocalDescription(description);
+									pc1.setRemoteDescription(description);
+							});
+					})
+        }
+
+		}
+    </script>
+  </body>
+</html>

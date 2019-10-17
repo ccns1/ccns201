@@ -42,3 +42,21 @@
 
 ### RTCPeerConnection
   > RTCPeerConnection api提供了 WebRTC端创建、链接、保持、监控闭连接的方法的实现
+  [RTCPeerConnection MDN](https://developer.mozilla.org/zh-CN/docs/Web/API/RTCPeerConnection)
+
+  1. 理解webRTC流程 实现本地媒体传输
+  ```
+    A呼叫B
+    1、A 创建RTCPeerConnection，监测"icecandidate"事件,添加本地视频流
+    2、B 创建RTCPeerConnection，并添加"addstream"事件
+    3、A createOffer(), A将本地通话相关信息（例：音视频编解码）发送给B并自己保存
+    4、B B收到信息保存，createAnswer() 把自己本地信息发给A，
+    4、"icecandidate"对应的函数会被调用，B 添加候选者发来候选消息
+    5、B端回调"addstrem"对应函数，播放视频
+  ```
+
+
+  2. 创建信令服务器 实现远程对话
+  ```
+  
+  ```

@@ -10,17 +10,21 @@
         width: 800px;
         margin: 100px auto 0;
       }
+			#local_video,
+			#remote_video {
+				width: 200px;
+			}
     </style>
   </head>
   <body>
     <div class="video_container">
       <video id="local_video"></video>
       <video id="remote_video"></video>
-    </div>
-    <hr />
-    <div class="button_container">
-      <button id="callButton">呼叫</button>
-      <button id="hangupButton">挂断</button>
+			<hr />
+			<div class="button_container">
+				<button id="callButton">呼叫</button>
+				<button id="hangupButton">挂断</button>
+			</div>
     </div>
 
     <script>
@@ -28,7 +32,8 @@
         let localVideo = document.getElementById("local_video")
         let remoteVideo = document.getElementById("remote_video")
         let callButton = document.getElementById("callButton")
-        let hangupButton = document.getElementById("hangupButton")
+				let hangupButton = document.getElementById("hangupButton")
+				let pc1,pc2
 
 				localVideo.addEventListener("loadedmetadata", () => {
           localVideo.play()
@@ -44,33 +49,39 @@
         callButton.addEventListener("click", async e => {
         	if (localStream) return console.log('连接中。。。');
         	localStream = await getUserMedia()
-        	localVideo.srcObject = localStream
+					localVideo.srcObject = localStream
 
 					callAction()
 
         })
 
         hangupButton.addEventListener("click", e => {
-        	localStream = null
+					localStream.getTracks().forEach(t => t.stop())
+					localStream = null
+					pc1.close()
+					pc2.close()
         })
 
         // 获取被动媒体
         async function getUserMedia() {
         	return await navigator.mediaDevices
-        		.getUserMedia({ video: true, audio: true })
+        		.getUserMedia({ video: {facingMode:  "user" }, audio: true })
         		.catch(e => {
-        			console.log(e)
+							console.log(e)
+							alert(e)
         		})
         }
 
-        function callAction() {
+        async function callAction() {
 
         	pc1 = new RTCPeerConnection()
         	pc2 = new RTCPeerConnection()
 
         	// 监测候选者加入
         	pc1.addEventListener('icecandidate', function (event) {
-        			let iceCandidate = event.candidate;
+							let iceCandidate = event.candidate;
+
+							// 实际这里会发送给信令服务穿法给pc2
         			if (iceCandidate) {
         				pc2.addIceCandidate(iceCandidate);
         			}
@@ -82,16 +93,25 @@
         		remoteVideo.srcObject = event.stream;
         	})
 
-        	pc1.createOffer({OfferToReceiveAudio: true, OfferToReceiveVideo: true}).then(function (offer) {
-        		pc1.setLocalDescription(offer);
-        		pc2.setRemoteDescription(offer);
+					//创建
+        	let offer = await pc1.createOffer({OfferToReceiveAudio: true, OfferToReceiveVideo: true})
+					pc1.setLocalDescription(offer);
 
-						pc2.createAnswer().then(function (description) {
-									pc2.setLocalDescription(description);
-									pc1.setRemoteDescription(description);
-							});
-					})
-        }
+
+
+					/*
+						实际这里应该是将offer发送到信令服务器
+					*/
+
+					pc2.setRemoteDescription(offer)
+					let description = await pc2.createAnswer()
+
+					pc2.setLocalDescription(description)
+
+
+					pc1.setRemoteDescription(description)
+
+			  }
 
 		}
     </script>

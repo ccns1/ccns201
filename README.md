@@ -88,10 +88,6 @@
   
       至此完成p2p连接 触发双发onaddstream事件
       
-      A createOffer(), A将本地通话相关信息（例：音视频编解码）发送给B并自己保存
-    4、B B收到信息保存，createAnswer() 把自己本地信息发给A，
-    4、"icecandidate"对应的函数会被调用，B 添加候选者发来候选消息
-    5、B端回调"addstrem"对应函数，播放视频
   ```
 
   2. 信令服务
